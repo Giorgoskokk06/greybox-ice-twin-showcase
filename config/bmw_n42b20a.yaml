@@ -1,0 +1,149 @@
+# =============================================================================
+# config/bmw_n42b20a.yaml — greybox-ice-twin-showcase
+# -----------------------------------------------------------------------------
+# Unified ISO 19848:2018 / SFI Group 601 Reciprocating Propulsion Twin Schema
+# Reference Engine: 2004 BMW E46 318i N42B20A (4-Stroke, 4-Cylinder)
+# =============================================================================
+
+schema_version: "3.1"
+standard: "ISO_19848_2018"
+sfi_group_code: "601"
+
+plant_metadata:
+  plant_id: "BMW_N42B20A"
+  plant_name: "BMW E46 318i N42B20A"
+  make: "BMW"
+  chassis: "E46 (318i Facelift)"
+  model_year: 2004
+  engine_code: "N42B20A"
+  ecu_type: "Bosch ME9.2"
+  domain: "automotive"
+  engine_cycle: "4_stroke"
+  strokes_per_cycle: 4
+  application: "Passenger Vehicle / Light Propulsion"
+  rated_power_kw: 105.0
+  rated_speed_rpm: 6000.0
+  idle_speed_rpm: 700.0
+  redline_speed_rpm: 6500.0
+  iso_19848_system_prefix: "/Chassis/Powertrain/Engine"
+
+geometry_and_kinematics:
+  cylinders: 4
+  firing_order: [1, 3, 4, 2]
+  displacement_m3: 0.001995              # 1995 cc in m^3
+  bore_m: 0.084                          # 84.0 mm
+  stroke_m: 0.090                        # 90.0 mm
+  connecting_rod_length_m: 0.144         # 144.0 mm
+  compression_ratio: 10.2
+  intake_valves_per_cyl: 2
+  intake_valve_diameter_m: 0.032         # 32.0 mm
+  exhaust_valve_diameter_m: 0.029        # 29.0 mm
+  valve_lift_min_m: 0.0003               # 0.3 mm Valvetronic idle micro-lift
+  valve_lift_max_m: 0.0097               # 9.7 mm WOT full lift
+  manifold_or_scavenge_volume_m3: 0.0038 # 3.8 L plastic intake manifold
+  airbox_volume_m3: 0.0094               # 9.4 L air cleaner housing
+
+thermodynamics_and_breathing:
+  gamma: 1.4                             # Specific heat ratio
+  r_specific: 287.05                     # Dry air gas constant [J/(kg K)]
+  critical_pressure_ratio_pi: 0.5283     # Sonic choking boundary
+  p_norm_blend_kp: 6.0                   # Series conductance exponent
+  softplus_eps_pi: 0.001                 # C^infinity smoothing epsilon
+  discharge_coeff_cd: 0.72               # Calibrated intake valve discharge coefficient
+  nominal_charge_pressure_pa: 96325.0    # Valvetronic intake plenum pressure (50 mbar vac)
+  ambient_pressure_pa: 101325.0
+  air_fuel_ratio_stoich: 14.7            # Gasoline stoichiometric AFR
+  fuel_lhv_j_per_kg: 43400000.0          # Gasoline lower heating value
+  volumetric_efficiency_base: 0.92
+
+cooling_and_thermal:
+  coolant_volume_liters: 7.0
+  oil_volume_liters: 4.25
+  capacitance_coolant_j_per_k: 92000.0   # 7.0L glycol + ~75kg coupled Al block/head
+  capacitance_oil_j_per_k: 18500.0       # 4.25L synthetic oil + sump casting
+  ua_coolant_clean_w_per_k: 1650.0       # Radiator clean overall conductance
+  ua_oil_clean_w_per_k: 380.0            # Oil-to-coolant heat exchanger clean conductance
+  ua_ambient_coolant_w_per_k: 45.0       # Block to ambient convective loss
+  ua_ambient_oil_w_per_k: 25.0           # Sump to ambient convective loss
+  nominal_coolant_temp_k: 378.15         # 105.0 C (part-load map thermostat target)
+  nominal_oil_temp_k: 368.15             # 95.0 C nominal oil temp
+  fouling_alarm_threshold: 0.65          # Alert if theta_fouling < 0.65
+
+injection_and_fuel_system:
+  fuel_delivery_type: "multi_point_port_injection"
+  nominal_fuel_rail_pressure_pa: 350000.0 # 3.5 bar returnless FPR
+  active_throttled_vacuum_pa: 50000.0     # 500 mbar excitation vacuum
+  throttled_mode_fuel_gain: 1.0615       # sqrt(4.00 / 3.55) FPR compensation
+  num_banks: 2
+  bank_to_cylinders:
+    1: [1, 4]
+    2: [2, 3]
+
+qualification_and_diagnostics:
+  gate1_max_fuel_trim_frac: 0.035        # 3.5%
+  gate2_max_vvt_error_m: 0.00005         # 0.05 mm
+  gate3_max_vanos_error_deg: 0.8
+  gate4_max_rough_running_rad_s2: 0.8    # 0.8 rad/s^2 Gate 4 threshold
+  jacobian_cond_max: 50.0
+
+iso_19848_channel_mapping:
+  engine_speed:
+    iso_local_short_id: "/Propulsion/MainEngine/EngineSpeed"
+    sfi_code: "601.31"
+    unit: "rpm"
+    description: "Crankshaft rotational speed"
+    native_signal: "engine_speed_rpm"
+  manifold_pressure:
+    iso_local_short_id: "/Propulsion/MainEngine/ScavengeAirPressure"
+    sfi_code: "601.11"
+    unit: "Pa"
+    description: "Intake manifold absolute pressure (MAP / P_scav)"
+    native_signal: "p_map"
+  charge_air_temperature:
+    iso_local_short_id: "/Propulsion/MainEngine/ScavengeAirTemperature"
+    sfi_code: "601.11"
+    unit: "K"
+    description: "Intake air temperature (IAT / T_scav)"
+    native_signal: "t_iat"
+  mass_air_flow:
+    iso_local_short_id: "/Propulsion/MainEngine/ScavengeAirMassFlow"
+    sfi_code: "601.11"
+    unit: "kg/s"
+    description: "Intake mass air flow"
+    native_signal: "m_dot_air"
+  valve_lift:
+    iso_local_short_id: "/Propulsion/MainEngine/ExhaustValveLift"
+    sfi_code: "601.11"
+    unit: "m"
+    description: "Variable valve actuation lift (Valvetronic / VVA)"
+    native_signal: "l_vvt"
+  coolant_temperature:
+    iso_local_short_id: "/Propulsion/MainEngine/JacketWaterTemp"
+    sfi_code: "601.41"
+    unit: "K"
+    description: "Engine coolant temperature (ECT / JCW)"
+    native_signal: "t_coolant"
+  oil_temperature:
+    iso_local_short_id: "/Propulsion/MainEngine/LubeOilTemp"
+    sfi_code: "601.41"
+    unit: "K"
+    description: "Engine lubricating oil temperature"
+    native_signal: "t_oil"
+  fuel_rail_pressure:
+    iso_local_short_id: "/Propulsion/MainEngine/FuelRailPressure"
+    sfi_code: "601.21"
+    unit: "Pa"
+    description: "Fuel rail pressure"
+    native_signal: "p_fuel_rail"
+  fuel_mass_flow:
+    iso_local_short_id: "/Propulsion/MainEngine/FuelOilConsumption"
+    sfi_code: "601.21"
+    unit: "kg/s"
+    description: "Fuel mass consumption rate"
+    native_signal: "m_dot_fuel"
+  crankshaft_ias_roughness:
+    iso_local_short_id: "/Propulsion/MainEngine/IASRoughness"
+    sfi_code: "601.31"
+    unit: "rad/s^2"
+    description: "Instantaneous Angular Speed rough running acceleration"
+    native_signal: "ias_cyl"
