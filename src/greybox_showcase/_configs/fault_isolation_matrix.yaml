@@ -1,0 +1,105 @@
+# =============================================================================
+# config/fault_isolation_matrix.yaml  —  greybox-ice-twin-showcase
+# -----------------------------------------------------------------------------
+# Machine-readable 8-Fault Deterministic Isolation Matrix (cond(H~) ≈ 6.41 < 50).
+#
+# Notes:
+# * bank_symmetry: SYMMETRIC  -> global air/MAF/FPR fault (B1 and B2 shift together)
+#                  ASYMMETRIC -> cylinder-local fault (|F_B1 - F_B2| > 0.03)
+#                  NONE       -> no steady-state stoichiometric signature
+# * Bank map (4-cyl split exhaust): Bank 1 = Cyl 1 & 4, Bank 2 = Cyl 2 & 3.
+# =============================================================================
+
+matrix_version: "3.0"
+target_condition_number_max: 50.0
+expected_condition_number: 6.413
+excitation_regimes: [KOEO, VALVETRONIC_50MBAR, ACTIVE_THROTTLED_500MBAR, COLD_WARMUP]
+
+fault_modes:
+  - fault_id: 1
+    fault_code: UNMETERED_AIR_CCV_LEAK
+    name: "Unmetered Air / CCV Valve or Hose Leak"
+    oem_part_numbers: ["11617503520"]
+    r_maf_signature: "Constant negative offset: r_MAF = -m_dot_leak(dP_man) < 0"
+    stoich_signature: "Symmetric positive shift F_B1 ≈ F_B2 ∝ +m_dot_leak/m_dot_air_calc; high at idle, decays hyperbolically"
+    bank_symmetry: SYMMETRIC
+    roughness_thermal_clue: "Symmetric Δω_k"
+    disambiguation_rule: "Active mode switch Valvetronic (ΔP=50 mbar) -> Throttled (ΔP=500 mbar) scales m_dot_leak by sqrt(10) ≈ 3.16x; KOEO V_HFM ∈ [0.97, 1.03] V"
+    primary_excitation: ACTIVE_THROTTLED_500MBAR
+
+  - fault_id: 2
+    fault_code: HFM5_MAF_GAIN_DRIFT
+    name: "HFM5 MAF Gain Contamination / Aging"
+    oem_part_numbers: ["13627566986"]
+    r_maf_signature: "Scales linearly with airflow: r_MAF(t) = θ_MAF,gain · m_dot_air_calc(t) < 0"
+    stoich_signature: "Symmetric load-invariant shift F_B1 ≈ F_B2 ≈ -θ_MAF,gain > 0 across all loads"
+    bank_symmetry: SYMMETRIC
+    roughness_thermal_clue: "Symmetric Δω_k"
+    disambiguation_rule: "Constant ratio r_MAF / m_dot_air_calc across idle and cruise; invariant to 50 -> 500 mbar vacuum switch; KOEO voltage normal"
+    primary_excitation: VALVETRONIC_50MBAR
+
+  - fault_id: 3
+    fault_code: HFM5_MAF_ZERO_OFFSET
+    name: "HFM5 MAF Zero-Offset Drift"
+    oem_part_numbers: ["13627566986"]
+    r_maf_signature: "Constant offset r_MAF = δ_MAF,offset ≠ 0 across all airflows"
+    stoich_signature: "Symmetric hyperbolic decay F_B1 ≈ F_B2 ∝ -δ_MAF,offset / m_dot_air_calc"
+    bank_symmetry: SYMMETRIC
+    roughness_thermal_clue: "Symmetric Δω_k"
+    disambiguation_rule: "Stage 1 KOEO gate: at RPM=0, V_HFM ∉ [0.97 V, 1.03 V] or raw MAF > 0.5 kg/h; invariant under Throttled mode excitation"
+    primary_excitation: KOEO
+
+  - fault_id: 4
+    fault_code: FUEL_PRESSURE_FPR_DEGRADATION
+    name: "Fuel Pressure Drop / Filter Regulator Degradation"
+    oem_part_numbers: ["13327512019", "11727545323"]
+    r_maf_signature: "r_MAF(t) ≈ 0 (measured airflow matches white-box physics)"
+    stoich_signature: "Symmetric positive divergence F_B1 ≈ F_B2 > +0.08, rising monotonically with m_dot_fuel"
+    bank_symmetry: SYMMETRIC
+    roughness_thermal_clue: "Symmetric lean surge at high load"
+    disambiguation_rule: "Decoupled from MAF gain error because r_MAF ≈ 0 while F_total spikes with m_dot_fuel."
+    primary_excitation: VALVETRONIC_50MBAR
+
+  - fault_id: 5
+    fault_code: SINGLE_INJECTOR_FOULING
+    name: "Single-Injector Varnish / Spray Fouling (Cyl 1-4)"
+    oem_part_numbers: ["13537546244"]
+    r_maf_signature: "r_MAF(t) ≈ 0"
+    stoich_signature: "Asymmetric bank split: affected bank F_total,Bx ∈ [+0.03, +0.08] while opposite bank stays near 0.00"
+    bank_symmetry: ASYMMETRIC
+    roughness_thermal_clue: "Asymmetric: Δω_k >> median(Δω) on fouled cylinder k"
+    disambiguation_rule: "Dual-bank trim asymmetry (|F_B1 - F_B2| > 0.03) co-located with the bank containing the rough cylinder k; persists in Throttled Mode (L_vvt = 9.7 mm), unlike fault #6"
+    primary_excitation: ACTIVE_THROTTLED_500MBAR
+
+  - fault_id: 6
+    fault_code: VALVETRONIC_ECCENTRIC_WEAR
+    name: "Valvetronic Eccentric Shaft / Intermediate Lever Wear"
+    oem_part_numbers: ["11377509295"]
+    r_maf_signature: "Mild negative r_MAF at micro-lift (L_vvt < 0.6 mm); r_MAF -> 0 at L_vvt > 2.0 mm"
+    stoich_signature: "Mild bank asymmetry at 700 RPM idle that vanishes at higher valve lifts"
+    bank_symmetry: ASYMMETRIC
+    roughness_thermal_clue: "Asymmetric at micro-lift only: Δω_k > 0.8 rad/s^2 at L_vvt = 0.35 mm, vanishes in Throttled Mode (L_vvt = 9.7 mm)"
+    disambiguation_rule: "Decoupled from injector fouling (#5) because switching to Throttled Mode (L_vvt -> 9.7 mm) immediately eliminates the cylinder k rough-running spike"
+    primary_excitation: ACTIVE_THROTTLED_500MBAR
+
+  - fault_id: 7
+    fault_code: STICKY_VANOS_SOLENOID
+    name: "Sticky VANOS Solenoid / Cam Phasing Retard"
+    oem_part_numbers: ["11367560462"]
+    r_maf_signature: "r_MAF < 0 during transient tip-in due to unmodeled overlap error"
+    stoich_signature: "Transient STFT spike during cam slewing; normal steady-state LTFT"
+    bank_symmetry: SYMMETRIC
+    roughness_thermal_clue: "Symmetric Δω_k; sluggish torque response"
+    disambiguation_rule: "Gate 3 violation: |θ_target - θ_actual| > 0.8 °CRK steady-state or slew rate < 80 °CRK/s at T_oil > 80 °C (353.15 K)"
+    primary_excitation: VALVETRONIC_50MBAR
+
+  - fault_id: 8
+    fault_code: THERMOSTAT_STUCK_VS_RADIATOR_FOULING
+    name: "Map-Thermostat Stuck Open vs. Radiator Fouling"
+    oem_part_numbers: ["11537510959"]
+    r_maf_signature: "r_MAF ≈ 0"
+    stoich_signature: "Normal (F_total ≈ 0) once T_coolant > 78 °C"
+    bank_symmetry: NONE
+    roughness_thermal_clue: "Thermal signature: T_rad,out rises prematurely (< 103 °C at PWM_stat = 0) or θ_rad_health < 0.65"
+    disambiguation_rule: "Stuck thermostat: T_rad,out tracks T_coolant during Stage 2 cold warm-up with PWM_stat = 0. Radiator clogging: T_coolant > 108 °C with PWM_stat = 100% and high T_coolant - T_rad,out delta"
+    primary_excitation: COLD_WARMUP

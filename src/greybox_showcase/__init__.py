@@ -17,6 +17,7 @@ from greybox_showcase.iso19848_twin import (
     SubModel3FuelTrimSnapshot,
     SubModel4IASRoughnessSnapshot,
     TwinEvaluationSnapshot,
+    resolve_config_path,
 )
 from greybox_showcase.observability import (
     BANK_1_CYLINDERS,
@@ -41,6 +42,7 @@ from greybox_showcase.observability import (
     evaluate_jacobian_rank_gate,
     finite_diff_observability_jacobian,
     isolate_faults,
+    load_fault_isolation_matrix,
     numpy_multi_regime_residuals,
 )
 from greybox_showcase.orthogonal_projector import (
@@ -49,7 +51,7 @@ from greybox_showcase.orthogonal_projector import (
     SurrogateAuditResult,
 )
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 __all__ = [
     "__version__",
@@ -62,6 +64,7 @@ __all__ = [
     "SubModel3FuelTrimSnapshot",
     "SubModel4IASRoughnessSnapshot",
     "TwinEvaluationSnapshot",
+    "resolve_config_path",
     "FaultSubspaceProjector",
     "OrthogonalPolySurrogate",
     "SurrogateAuditResult",
@@ -87,5 +90,6 @@ __all__ = [
     "evaluate_jacobian_rank_gate",
     "finite_diff_observability_jacobian",
     "isolate_faults",
+    "load_fault_isolation_matrix",
     "numpy_multi_regime_residuals",
 ]

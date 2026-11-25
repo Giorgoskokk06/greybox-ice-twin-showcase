@@ -2,14 +2,21 @@
 
 from __future__ import annotations
 
+from importlib import resources
 import math
 from pathlib import Path
 
+import pytest
+
+import greybox_showcase
+import greybox_showcase.iso19848_twin as iso19848_twin
 from greybox_showcase.iso19848_twin import (
     AbstractReciprocatingTwin,
     ISO19848TelemetryFrame,
     TwinEvaluationSnapshot,
+    resolve_config_path,
 )
+from greybox_showcase.observability import load_fault_isolation_matrix
 
 
 class TestISO19848DualInstantiation:
@@ -40,6 +47,42 @@ class TestISO19848DualInstantiation:
         t2 = AbstractReciprocatingTwin.from_yaml(Path("config/maritime_man_bw_6s50me_c.yaml"))
         assert t1.cylinders == 4
         assert t2.cylinders == 6
+
+    def test_bundled_configs_present_and_synced(self) -> None:
+        repo_cfg_dir = Path(__file__).resolve().parent.parent / "config"
+        pkg_configs = resources.files("greybox_showcase._configs")
+        for filename in (
+            "bmw_n42b20a.yaml",
+            "maritime_man_bw_6s50me_c.yaml",
+            "fault_isolation_matrix.yaml",
+        ):
+            bundled = pkg_configs.joinpath(filename)
+            assert bundled.is_file()
+            if repo_cfg_dir.is_dir():
+                assert bundled.read_text(encoding="utf-8") == (
+                    repo_cfg_dir / filename
+                ).read_text(encoding="utf-8")
+
+    def test_bundled_config_resolution_outside_repo(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.setattr(iso19848_twin, "_REPO_ROOT", tmp_path)
+
+        resolved_bmw = resolve_config_path("bmw_n42b20a.yaml")
+        assert resolved_bmw.is_file()
+        assert resolved_bmw.parent.name == "_configs"
+
+        bmw = AbstractReciprocatingTwin("bmw_n42b20a.yaml")
+        marine = AbstractReciprocatingTwin("config/maritime_man_bw_6s50me_c.yaml")
+        matrix = load_fault_isolation_matrix("fault_isolation_matrix.yaml")
+
+        assert bmw.plant_id == "BMW_N42B20A"
+        assert marine.plant_id == "MAN_BW_6S50ME_C"
+        assert len(matrix["fault_modes"]) == 8
+
+    def test_package_version_updated(self) -> None:
+        assert greybox_showcase.__version__ == "0.1.1"
 
 
 class TestSubModelIsomorphism:
@@ -169,3 +212,39 @@ class TestSubModelIsomorphism:
         )
         assert isinstance(snap, TwinEvaluationSnapshot)
         assert "strouhal_number" in snap.dimensionless_numbers
+
+    def test_zero_fuel_flow_dfco_and_zero_rail_pressure(self) -> None:
+        twin = AbstractReciprocatingTwin("bmw_n42b20a.yaml")
+
+        # Deceleration Fuel Cut-Off (DFCO): fuel_mass_flow_kg_s == 0.0 despite air flow > 0
+        frame_dfco = ISO19848TelemetryFrame(
+            engine_speed_rpm=2500.0,
+            manifold_or_scavenge_pressure_pa=45000.0,
+            charge_air_temperature_k=300.0,
+            mass_air_flow_kg_s=0.015,
+            valve_lift_m=0.005,
+            coolant_temperature_k=368.15,
+            oil_temperature_k=368.15,
+            ambient_or_sink_temperature_k=298.15,
+            fuel_mass_flow_kg_s=0.0,
+            fuel_rail_pressure_pa=0.0,
+        )
+        thermal_dfco = twin.evaluate_submodel2_thermal(frame_dfco)
+        # With q_in_c = 0.0 and T_coolant > T_ambient, engine must cool down (negative derivative)
+        assert thermal_dfco.d_temp_coolant_dt_k_s < 0.0
+        # Compare against fuel_mass_flow_kg_s=None where stoichiometric fallback adds positive heat
+        frame_stoich = frame_dfco.model_copy(update={"fuel_mass_flow_kg_s": None})
+        thermal_stoich = twin.evaluate_submodel2_thermal(frame_stoich)
+        c_th_c = float(twin.thermal["capacitance_coolant_j_per_k"])
+        lhv = float(twin.thermo["fuel_lhv_j_per_kg"])
+        afr = float(twin.thermo["air_fuel_ratio_stoich"])
+        expected_delta_q = 0.28 * (frame_dfco.mass_air_flow_kg_s / afr) * lhv
+        assert math.isclose(
+            (thermal_stoich.d_temp_coolant_dt_k_s - thermal_dfco.d_temp_coolant_dt_k_s) * c_th_c,
+            expected_delta_q,
+            rel_tol=1e-9,
+        )
+
+        # Depressurized rail: fuel_rail_pressure_pa == 0.0 -> 100% droop (-1.0), not nominal (0.0)
+        fuel_zero_rail = twin.evaluate_submodel3_fuel_trim(frame_dfco)
+        assert math.isclose(fuel_zero_rail.fuel_pressure_droop_ratio, -1.0, abs_tol=1e-12)

@@ -1,0 +1,32 @@
+NOTICE
+======
+
+Copyright (c) 2026 Giorgos Kokkaliaris (Independent Academic Research, University of West Attica).
+
+License Notice
+--------------
+This software and accompanying mathematical documentation are licensed under the
+PolyForm Noncommercial License 1.0.0 (see the LICENSE file in this repository or
+https://polyformproject.org/licenses/noncommercial/1.0.0).
+Academic research, university evaluation, and personal educational or portfolio
+execution are permitted. Any commercial use requires a separate written license
+from the author.
+
+Trademark & Non-Affiliation Disclaimer
+--------------------------------------
+BMW, Valvetronic, VANOS, Bosch, Motronic, MAN Energy Solutions, MAN B&W, and
+Wärtsilä are registered trademarks of their respective owners. All engine
+designations, OEM reference part numbers, and engineering architectures cited
+in configuration schemas or documentation are used strictly for technical
+identification and noncommercial academic comparison. This repository is an
+independent academic/mathematical modeling showcase and is neither affiliated
+with nor endorsed by any manufacturer.
+
+Third-Party Runtime Dependencies
+--------------------------------
+This project depends at runtime on the following open-source Python packages,
+each distributed by its respective copyright holders under its own license:
+
+- numpy      — BSD 3-Clause License (https://numpy.org/)
+- pydantic   — MIT License (https://docs.pydantic.dev/)
+- pyyaml     — MIT License (https://pyyaml.org/)

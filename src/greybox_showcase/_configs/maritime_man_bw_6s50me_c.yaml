@@ -1,0 +1,150 @@
+# =============================================================================
+# config/maritime_man_bw_6s50me_c.yaml — greybox-ice-twin-showcase
+# -----------------------------------------------------------------------------
+# Unified ISO 19848:2018 / SFI Group 601 Reciprocating Propulsion Twin Schema
+# Reference Engine: MAN B&W 6S50ME-C9.7-TII 2-Stroke Low-Speed Marine Diesel
+# =============================================================================
+
+schema_version: "3.1"
+standard: "ISO_19848_2018"
+sfi_group_code: "601"
+
+plant_metadata:
+  plant_id: "MAN_BW_6S50ME_C"
+  plant_name: "MAN B&W 6S50ME-C9.7 Low-Speed Marine Diesel"
+  make: "MAN Energy Solutions (MAN B&W)"
+  chassis: "Panamax Bulk Carrier / Container Feeder Hull"
+  model_year: 2022
+  engine_code: "6S50ME-C9.7-TII"
+  ecu_type: "MAN B&W Engine Control System (ECS / MPC Multi-Purpose Controller)"
+  domain: "maritime_propulsion"
+  engine_cycle: "2_stroke"
+  strokes_per_cycle: 2
+  application: "Direct-Drive Ocean-Going Marine Propulsion"
+  rated_power_kw: 10680.0
+  rated_speed_rpm: 127.0
+  idle_speed_rpm: 35.0
+  redline_speed_rpm: 135.0
+  iso_19848_system_prefix: "/Propulsion/MainEngine"
+
+geometry_and_kinematics:
+  cylinders: 6
+  strokes_per_cycle: 2
+  firing_order: [1, 5, 3, 4, 2, 6]
+  displacement_m3: 2.3562                # 6 * (pi/4 * 0.5^2 * 2.0) = 2.356194 m^3
+  bore_m: 0.500                          # 500 mm
+  stroke_m: 2.000                        # 2000 mm (ultra-long stroke)
+  connecting_rod_length_m: 3.200         # Crosshead connecting rod
+  compression_ratio: 19.5
+  intake_valves_per_cyl: 1               # Central hydraulic exhaust valve + scavenge liner ports
+  intake_valve_diameter_m: 0.220         # 220 mm exhaust poppet valve head
+  exhaust_valve_diameter_m: 0.220        # 220 mm
+  valve_lift_min_m: 0.0050               # 5.0 mm slow-steaming / minimum hydraulic lift
+  valve_lift_max_m: 0.1200               # 120.0 mm full stroke hydraulic VVA lift
+  manifold_or_scavenge_volume_m3: 18.5   # 18.5 m^3 scavenge air receiver trunking
+  airbox_volume_m3: 24.0                 # Turbocharger charge-air plenum
+
+thermodynamics_and_breathing:
+  gamma: 1.4                             # Specific heat ratio
+  r_specific: 287.05                     # Dry air gas constant [J/(kg K)]
+  critical_pressure_ratio_pi: 0.5283     # Sonic choking boundary
+  p_norm_blend_kp: 6.0                   # Series conductance exponent
+  softplus_eps_pi: 0.001                 # C^infinity smoothing epsilon
+  discharge_coeff_cd: 0.68               # Scavenge port / exhaust valve discharge coefficient
+  nominal_charge_pressure_pa: 320000.0   # 3.2 bar (320 kPa) Scavenge receiver pressure
+  ambient_pressure_pa: 101325.0
+  air_fuel_ratio_stoich: 14.3            # Heavy / Marine Diesel Oil stoich AFR
+  fuel_lhv_j_per_kg: 42700000.0          # Marine Gas Oil / VLSFO lower heating value
+  volumetric_efficiency_base: 0.95
+
+cooling_and_thermal:
+  coolant_volume_liters: 4500.0          # Central Freshwater Jacket Cooling Water (JCW)
+  oil_volume_liters: 2200.0              # System Lube Oil
+  capacitance_coolant_j_per_k: 4800000.0 # 4.8 MJ/K central jacket water + cylinder covers
+  capacitance_oil_j_per_k: 1900000.0     # 1.9 MJ/K lube oil cooler circuit + bedplate
+  ua_coolant_clean_w_per_k: 120000.0     # Central plate heat exchanger clean conductance
+  ua_oil_clean_w_per_k: 45000.0          # Shell-and-tube lube oil cooler clean conductance
+  ua_ambient_coolant_w_per_k: 1500.0     # Engine room convective loss
+  ua_ambient_oil_w_per_k: 800.0          # Bedplate/sump convective loss
+  nominal_coolant_temp_k: 358.15         # 85.0 C (JCW outlet setpoint)
+  nominal_oil_temp_k: 328.15             # 55.0 C (Lube oil inlet setpoint)
+  fouling_alarm_threshold: 0.65          # Alert if theta_fouling < 0.65 (plate cleaning)
+
+injection_and_fuel_system:
+  fuel_delivery_type: "high_pressure_common_rail_vit"
+  nominal_fuel_rail_pressure_pa: 80000000.0 # 800 bar (80 MPa) Common Rail
+  active_throttled_vacuum_pa: 0.0        # Unthrottled diesel; excitation via VIT sweep
+  throttled_mode_fuel_gain: 1.0000
+  num_banks: 2
+  bank_to_cylinders:
+    1: [1, 2, 3]                         # Forward cylinder group
+    2: [4, 5, 6]                         # Aft cylinder group
+
+qualification_and_diagnostics:
+  gate1_max_fuel_trim_frac: 0.035        # 3.5% SFOC deviation threshold
+  gate2_max_vvt_error_m: 0.00100         # 1.0 mm VVA hydraulic position tolerance
+  gate3_max_vanos_error_deg: 0.5         # VIT timing angle tolerance
+  gate4_max_rough_running_rad_s2: 0.25   # Low-speed IAS spread threshold (rad/s^2)
+  jacobian_cond_max: 50.0
+
+iso_19848_channel_mapping:
+  engine_speed:
+    iso_local_short_id: "/Propulsion/MainEngine/EngineSpeed"
+    sfi_code: "601.31"
+    unit: "rpm"
+    description: "Crankshaft rotational speed"
+    native_signal: "me_rpm"
+  manifold_pressure:
+    iso_local_short_id: "/Propulsion/MainEngine/ScavengeAirPressure"
+    sfi_code: "601.11"
+    unit: "Pa"
+    description: "Scavenge air receiver absolute pressure"
+    native_signal: "p_scav"
+  charge_air_temperature:
+    iso_local_short_id: "/Propulsion/MainEngine/ScavengeAirTemperature"
+    sfi_code: "601.11"
+    unit: "K"
+    description: "Scavenge air receiver temperature"
+    native_signal: "t_scav"
+  mass_air_flow:
+    iso_local_short_id: "/Propulsion/MainEngine/ScavengeAirMassFlow"
+    sfi_code: "601.11"
+    unit: "kg/s"
+    description: "Turbocharger compressor air delivery mass flow"
+    native_signal: "m_dot_scav"
+  valve_lift:
+    iso_local_short_id: "/Propulsion/MainEngine/ExhaustValveLift"
+    sfi_code: "601.11"
+    unit: "m"
+    description: "Hydraulic VVA exhaust valve actuator lift"
+    native_signal: "vva_lift"
+  coolant_temperature:
+    iso_local_short_id: "/Propulsion/MainEngine/JacketWaterTemp"
+    sfi_code: "601.41"
+    unit: "K"
+    description: "Central freshwater jacket cooling water (JCW) outlet temperature"
+    native_signal: "t_jcw_out"
+  oil_temperature:
+    iso_local_short_id: "/Propulsion/MainEngine/LubeOilTemp"
+    sfi_code: "601.41"
+    unit: "K"
+    description: "Main engine lubricating oil cooler inlet/outlet temperature"
+    native_signal: "t_lube_oil"
+  fuel_rail_pressure:
+    iso_local_short_id: "/Propulsion/MainEngine/FuelRailPressure"
+    sfi_code: "601.21"
+    unit: "Pa"
+    description: "High-pressure fuel injection common-rail pressure"
+    native_signal: "p_rail_high"
+  fuel_mass_flow:
+    iso_local_short_id: "/Propulsion/MainEngine/FuelOilConsumption"
+    sfi_code: "601.21"
+    unit: "kg/s"
+    description: "Specific fuel oil consumption (SFOC) mass flow rate"
+    native_signal: "m_dot_hfo"
+  crankshaft_ias_roughness:
+    iso_local_short_id: "/Propulsion/MainEngine/IASRoughness"
+    sfi_code: "601.31"
+    unit: "rad/s^2"
+    description: "Instantaneous Angular Speed (IAS) torsional cylinder roughness"
+    native_signal: "ias_cyl"

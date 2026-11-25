@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "If you use this software or mathematical framework in academic work, please cite it using the metadata below."
+title: "greybox-ice-twin-showcase"
+type: software
+authors:
+  - family-names: "Kokkaliaris"
+    given-names: "Giorgos"
+    affiliation: "Department of Mechanical Engineering, University of West Attica (UNIWA)"
+version: "0.1.1"
+date-released: "2026-11-25"
+license: "PolyForm-Noncommercial-1.0.0"
+repository-code: "https://github.com/Giorgoskokk06/greybox-ice-twin-showcase"
+url: "https://github.com/Giorgoskokk06/greybox-ice-twin-showcase"
+abstract: >-
+  Pure-Python mathematical core of a physics-informed grey-box digital twin for
+  reciprocating internal combustion engines, implementing ISO 19848:2018 / SFI 601
+  automotive-to-maritime polymorphism, orthogonal fault-subspace projection, and
+  full-rank 8-fault multi-regime observability.
+keywords:
+  - digital-twin
+  - grey-box-modeling
+  - internal-combustion-engine
+  - iso-19848
+  - fault-isolation
+  - orthogonal-projection
+  - observability

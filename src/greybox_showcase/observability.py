@@ -27,9 +27,11 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass, field
 from enum import Enum
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
+import yaml
 
 
 # =============================================================================
@@ -934,3 +936,19 @@ def isolate_faults(
 ) -> IsolationResult:
     """Convenience functional wrapper for FaultIsolationEngine.isolate_faults."""
     return FaultIsolationEngine(condition_threshold=condition_threshold).isolate_faults(observations)
+
+
+def load_fault_isolation_matrix(
+    path_or_str: Union[str, Path] = "fault_isolation_matrix.yaml",
+) -> Dict[str, Any]:
+    """Loads the 8-fault isolation matrix YAML from repo config/ or bundled package data."""
+    from greybox_showcase.iso19848_twin import resolve_config_path
+
+    resolved = resolve_config_path(path_or_str)
+    with open(resolved, "r", encoding="utf-8") as f:
+        raw = yaml.safe_load(f)
+
+    if not isinstance(raw, dict):
+        raise ValueError(f"Invalid YAML content in {resolved}")
+
+    return raw

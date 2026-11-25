@@ -84,7 +84,7 @@ At a single operating point, vacuum leaks, MAF drift, and fuel pressure droop pr
 
 ## Scope note
 
-This public repository contains the self-contained mathematical core, configs, CLI demo, and 22 unit tests (`src/greybox_showcase/`, `config/`, `tests/`). Live in-vehicle KWP2000/K-Line OBD acquisition, ECU symbol tables, lakehouse ingestion, and GPU JAX/Diffrax calibration runners live in the private hardware-in-the-loop branch.
+This public repository contains the self-contained mathematical core, configs, CLI demo, and 26 unit tests (`src/greybox_showcase/`, `config/`, `tests/`). Live in-vehicle KWP2000/K-Line OBD acquisition, ECU symbol tables, lakehouse ingestion, and GPU JAX/Diffrax calibration runners live in the private hardware-in-the-loop branch.
 
 ## Layout
 
@@ -97,12 +97,18 @@ src/greybox_showcase/
   iso19848_twin.py                # Polymorphic 4-submodel digital twin
   orthogonal_projector.py         # Reorthogonalized QR projector P_{F^perp}
   observability.py                # 12x8 Jacobian, SVD rank gate, isolation engine
+  _configs/                       # Bundled YAML package data for wheel installs
 scripts/
   run_showcase_demo.py            # End-to-end verification printout
-tests/                            # 22 pytest cases (math, parity, CLI smoke)
+tests/                            # 26 pytest cases (math, parity, packaging, CLI smoke)
+CITATION.cff                      # CFF 1.2.0 academic citation metadata
+LICENSE                           # PolyForm Noncommercial License 1.0.0
+NOTICE                            # Trademark disclaimer & third-party notices
 ```
 
 ## Author & License
 
-Giorgos Kokkaliaris — Mechanical Engineering, University of West Attica (UNIWA).  
-Released under the [MIT License](LICENSE).
+Giorgos Kokkaliaris — Department of Mechanical Engineering, University of West Attica (UNIWA).  
+Released under the **[PolyForm Noncommercial License 1.0.0](LICENSE)** (see also [NOTICE](NOTICE) and [CITATION.cff](CITATION.cff)).
+
+Academic research, university evaluation, and personal educational or portfolio execution are permitted under the PolyForm Noncommercial License 1.0.0. Commercial use requires a separate written license from the author.

@@ -18,6 +18,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from importlib import resources
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
@@ -112,6 +113,45 @@ class ISO19848TelemetryFrame(BaseModel):
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
+_REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+
+
+def resolve_config_path(path_or_str: Union[str, Path]) -> Path:
+    """Resolves a config YAML path from CWD, repo config/, or bundled package data."""
+    p = Path(path_or_str)
+    if p.is_file():
+        return p
+
+    if not p.is_absolute():
+        is_config_relative = len(p.parts) == 1 or (
+            len(p.parts) == 2 and p.parts[0] == "config"
+        )
+        if is_config_relative:
+            p_config = Path("config") / p.name
+            if p_config.is_file():
+                return p_config
+
+            p_root_config = _REPO_ROOT / "config" / p.name
+            if p_root_config.is_file():
+                return p_root_config
+
+        p_root_direct = _REPO_ROOT / p
+        if p_root_direct.is_file():
+            return p_root_direct
+
+        if is_config_relative:
+            pkg_configs = resources.files("greybox_showcase._configs")
+            bundled = pkg_configs.joinpath(p.name)
+            if bundled.is_file():
+                if isinstance(bundled, Path):
+                    return bundled
+                candidate = Path(str(bundled))
+                if candidate.is_file():
+                    return candidate
+
+    raise FileNotFoundError(f"Could not locate plant config YAML at '{path_or_str}'.")
+
+
 # =============================================================================
 # 2. Reciprocating Plant Configuration Model
 # =============================================================================
@@ -136,25 +176,8 @@ class ReciprocatingPlantConfig(BaseModel):
 
     @classmethod
     def resolve_path(cls, path_or_str: Union[str, Path]) -> Path:
-        """Resolves file path directly, against config/, or relative to project root."""
-        p = Path(path_or_str)
-        if p.is_file():
-            return p
-
-        p_config = Path("config") / p.name
-        if p_config.is_file():
-            return p_config
-
-        root = Path(__file__).resolve().parent.parent.parent
-        p_root_config = root / "config" / p.name
-        if p_root_config.is_file():
-            return p_root_config
-
-        p_root_direct = root / p
-        if p_root_direct.is_file():
-            return p_root_direct
-
-        raise FileNotFoundError(f"Could not locate plant config YAML at '{path_or_str}'.")
+        """Resolves file path directly, against config/, repo root, or bundled package data."""
+        return resolve_config_path(path_or_str)
 
     @classmethod
     def from_yaml(cls, path_or_str: Union[str, Path]) -> ReciprocatingPlantConfig:
@@ -408,10 +431,12 @@ class AbstractReciprocatingTwin:
         if frame.heat_input_coolant_w is not None:
             q_in_c = frame.heat_input_coolant_w
         else:
-            fuel_flow = frame.fuel_mass_flow_kg_s or (
-                frame.mass_air_flow_kg_s
-                / float(self.thermo.get("air_fuel_ratio_stoich", 14.7))
-            )
+            if frame.fuel_mass_flow_kg_s is not None:
+                fuel_flow = frame.fuel_mass_flow_kg_s
+            else:
+                fuel_flow = frame.mass_air_flow_kg_s / float(
+                    self.thermo.get("air_fuel_ratio_stoich", 14.7)
+                )
             lhv = float(self.thermo.get("fuel_lhv_j_per_kg", 43400000.0))
             q_in_c = 0.28 * fuel_flow * lhv
 
@@ -476,7 +501,11 @@ class AbstractReciprocatingTwin:
         m_dot_leak = leak_conductance_est * math.sqrt(max(delta_p_leak, 0.0))
 
         p_rail_nominal = float(self.fuel_sys.get("nominal_fuel_rail_pressure_pa", 350000.0))
-        p_rail_actual = frame.fuel_rail_pressure_pa or p_rail_nominal
+        p_rail_actual = (
+            frame.fuel_rail_pressure_pa
+            if frame.fuel_rail_pressure_pa is not None
+            else p_rail_nominal
+        )
         rail_droop_ratio = float((p_rail_actual - p_rail_nominal) / max(p_rail_nominal, 1.0))
 
         cyl_deviations: List[float] = []
